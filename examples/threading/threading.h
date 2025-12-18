@@ -19,10 +19,11 @@ struct thread_data{
      * Set to true if the thread completed with success, false
      * if an error occurred.
      */
+    int wait_to_obtain_ms;
+    int wait_to_release_ms;
+    pthread_mutex_t *mutex;
     bool thread_complete_success;
 };
-
-
 /**
 * Start a thread which sleeps @param wait_to_obtain_ms number of milliseconds, then obtains the
 * mutex in @param mutex, then holds for @param wait_to_release_ms milliseconds, then releases.
