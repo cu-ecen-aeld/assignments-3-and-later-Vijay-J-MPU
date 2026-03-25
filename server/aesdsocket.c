@@ -12,19 +12,23 @@
 #define PORT 9000
 #define tmp_file "/var/tmp/aesdsocketdata"
  
-bool run_program = true;
-char *buffer;
-int socketfd;
+ bool run_program = true;
+ char *buffer;
+ int socketfd;
  
 void cleanup() {
     //free buffer
+
     free(buffer);
+ 
     //remove tmp file
     if (unlink(tmp_file) != 0) {
 		perror("Failed to remove file");
     }
+ 
     //close connections 
     close(socketfd);
+
     closelog();
 }
  
@@ -129,8 +133,10 @@ int main(int argc, char *argv[]) {
         socklen_t client_addr_len = sizeof(client_addr);
         int clientfd = accept(socketfd, &client_addr, &client_addr_len);
         if (clientfd < 0) {
-            cleanup();
-            return -1;
+        	if (run_program ==false){
+	        	break;
+			}		
+			continue;
         }
  
         syslog(LOG_INFO,"Accepted connection from %s",client_addr.sa_data);
