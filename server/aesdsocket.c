@@ -207,7 +207,10 @@ if (fp) {
         if(pid > 0) exit(0);
  
         setsid();
-        (void)chdir("/");
+        if(chdir("/") != 0){
+        	perror("chdir failed"
+			exit(EXIT_FAILURE);
+		}
         close(STDIN_FILENO);
         close(STDOUT_FILENO);
         close(STDERR_FILENO);
