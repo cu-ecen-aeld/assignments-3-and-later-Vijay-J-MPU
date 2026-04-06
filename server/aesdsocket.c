@@ -208,7 +208,7 @@ if (fp) {
  
         setsid();
         if(chdir("/") != 0){
-        	perror("chdir failed"
+        	perror("chdir failed");
 			exit(EXIT_FAILURE);
 		}
         close(STDIN_FILENO);
