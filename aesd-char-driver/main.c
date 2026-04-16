@@ -61,9 +61,13 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     /**
      * TODO: handle read
      */
-    struct aesd_dev *dev = filp->private_data;
+    struct aesd_dev *dev ;
     struct aesd_buffer_entry *entry;
     size_t entry_offset;
+    size_t bytes_available;
+    size_t bytes_to_copy;
+    
+    dev = filp->private_data;
     
     if(mutex_lock_interruptible(&dev->lock))
     	return -ERESTARTSYS;
@@ -74,8 +78,8 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     	retval = 0;
     	goto out;
     }
-    size_t bytes_available = entry->size - entry_offset;
-    size_t bytes_to_copy = min(count, bytes_available);
+    bytes_available = entry->size - entry_offset;
+    bytes_to_copy = min(count, bytes_available);
     
     if (copy_to_user(buf, entry->buffptr + entry_offset, bytes_to_copy)) {
     	retval = -EFAULT;
@@ -98,8 +102,11 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     /**
      * TODO: handle write
      */
-    struct aesd_dev *dev = filp->private_data;
+    struct aesd_dev *dev ;
     char *temp;
+    struct aesd_buffer_entry entry;
+    
+    dev = filp->private_data;
     
     if (mutex_lock_interruptible(&dev->lock))
     	return -ERESTARTSYS;
@@ -124,14 +131,11 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     
     if(memchr(dev->write_buffer, '\n',dev->write_buffer_size)) {
     
-    	struct aesd_buffer_entry entry;
     	entry.buffptr = dev->write_buffer;
     	entry.size = dev->write_buffer_size;
     	
-    	const char *old_buff = aesd_circular_buffer_add_entry(&dev->buffer , &entry);
-    	if(old_buff)
-    		kfree(old_buff);
-    		
+    	aesd_circular_buffer_add_entry(&dev->buffer , &entry);
+
     	//Reset temp buffer 
     	dev->write_buffer = NULL;
     	dev->write_buffer_size = 0 ;
@@ -200,6 +204,7 @@ int aesd_init_module(void)
 
 void aesd_cleanup_module(void)
 {
+    uint8_t i;
     dev_t devno = MKDEV(aesd_major, aesd_minor);
 
     cdev_del(&aesd_device.cdev);
@@ -208,9 +213,7 @@ void aesd_cleanup_module(void)
      * TODO: cleanup AESD specific poritions here as necessary
      */
     mutex_lock(&aesd_device.lock);
-    
-    uint8_t i;
-    
+      
     for (i=0; i < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED; i++) {
     	if (aesd_device.buffer.entry[i].buffptr)
     		kfree(aesd_device.buffer.entry[i].buffptr);
